@@ -1,0 +1,1 @@
+Last verified build: 2026-11-01 | Java 17 | Gradle 8.11.1 | Android SDK 35 | :app:assembleDebug BUILD SUCCESSFUL | APK package site.houseli.petalcontrol | Android minSdk 28 | version 0.2-reference-matched | 2,413,924 bytes | SHA256 edbcd21ce065e2eaeff71420a1e8bb5fb53be2f4aaed57fa0c5644ec07972dd3 | No runtime test performed.

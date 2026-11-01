@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no"><title>Petal Control — HyperOS-inspired Control Center</title><meta name="theme-color" content="#06317b"><style>
+:root{--cyan:#e6fbff;--white:#f7faff;--ink:#eef8ff;--navy:#062c71;--spring:cubic-bezier(.16,1,.3,1);--fast:cubic-bezier(.22,.85,.28,1);--delay:0ms}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:pan-y;overscroll-behavior:none}body{font-family:Roboto,"Arial",system-ui,sans-serif;background:#12397f;color:#f6fcff;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+button{appearance:none;border:none;color:inherit;font:inherit;cursor:pointer;background:none;padding:0}button:focus-visible{outline:2px solid white;outline-offset:2px}svg{display:block;width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}svg.fill{stroke:none;fill:currentColor}
+#app{position:relative;width:100%;height:100%;overflow:hidden;isolation:isolate;background:linear-gradient(154deg,#082364 0%,#1462b2 31%,#12a1ae 67%,#003260 100%)}
+#ambient{position:absolute;inset:-12%;pointer-events:none;background:radial-gradient(ellipse 67% 45% at 35% 36%,#5ab7ff 0%,transparent 78%),radial-gradient(ellipse 58% 70% at 92% 66%,#10aa92 0%,transparent 77%),radial-gradient(ellipse 36% 43% at 9% 78%,#1b5ba8 0%,transparent 85%),linear-gradient(135deg,#13296b,#063f90 58%,#008588);filter:saturate(1.18);transform:scale(1.04)}
+#home{position:absolute;inset:0;transition:filter .5s ease,transform .6s var(--spring);color:white;padding:12px 20px 33px;display:flex;flex-direction:column}
+#home.open{filter:blur(17px) saturate(1.4);transform:scale(1.065)}
+.home-header{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600;opacity:.95}.home-clock{font-size:56px;font-weight:300;letter-spacing:-2px;margin-top:33px}.home-date{font-size:14px;margin-top:-4px;opacity:.9}.home-search{margin:58px 0 0;padding:16px;border-radius:30px;background:linear-gradient(110deg,#09366caa,#10204f99);display:flex;align-items:center;justify-content:space-between;color:#cdecff}
+.app-icons{margin-top:35px;display:grid;grid-template-columns:repeat(4,1fr);gap:23px 15px}.app-symbol{width:min(17vw,59px);height:min(17vw,59px);border-radius:19px;display:grid;place-items:center;font-size:27px;background:linear-gradient(135deg,#ffcf64,#f83c84);box-shadow:0 7px 20px #102b5770}.app-symbol:nth-child(3n){background:linear-gradient(135deg,#83caff,#5266f7)}.app-symbol:nth-child(4n){background:linear-gradient(135deg,#4dd6a1,#148a9f)}
+.home-dock{margin-top:auto;display:flex;justify-content:space-around;padding:16px 4px;border-radius:28px;background:#062f6a80;backdrop-filter:blur(18px)}.home-pill{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:105px;height:4px;border-radius:4px;background:#ffffffbd}
+#hint{position:absolute;bottom:9%;width:100%;text-align:center;pointer-events:none;transition:opacity .25s;z-index:2}#hint span{display:inline-block;padding:12px 18px;border-radius:30px;background:#032660bd;font-size:13px;color:#d4f4ff;border:1px solid #ffffff21;backdrop-filter:blur(10px)}
+#shade{position:absolute;inset:0;z-index:5;overflow:hidden;transform:translateY(-105%);opacity:0;pointer-events:none;transition:transform .6s var(--spring),opacity .29s ease;touch-action:pan-y;background:linear-gradient(160deg,#385d95af 0%,#2c84b8a6 30%,#2757859c 55%,#04416bbd 100%);-webkit-backdrop-filter:blur(27px) saturate(1.65);backdrop-filter:blur(27px) saturate(1.65)}
+#shade.show{transform:translateY(0);opacity:1;pointer-events:auto}
+#shade:before{content:"";position:absolute;inset:-25%;pointer-events:none;background:radial-gradient(40% 37% at 20% 20%,#75aeff66,transparent 90%),radial-gradient(40% 44% at 92% 67%,#20d3a866,transparent 86%),radial-gradient(33% 43% at 0% 92%,#0d4b8c66,transparent 88%);filter:blur(25px)}
+#scroll{position:relative;height:100%;width:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;touch-action:pan-y}#scroll::-webkit-scrollbar{display:none}
+#content{width:100%;max-width:500px;min-height:100%;padding:calc(max(27px, env(safe-area-inset-top)) + 38px) 30px 28px;margin:auto;transition:filter .36s ease, transform .45s var(--spring),opacity .28s ease}
+#shade.detail #content{filter:blur(13px);transform:scale(.955);opacity:.48;pointer-events:none}
+.brandline{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;gap:10px;min-height:45px}
+.small-date{font-weight:500;line-height:1.2;font-size:16px;text-shadow:0 1px 2px #09285a45}.status-side{text-align:right;align-self:flex-end}.user-name{font-weight:500;font-size:14px;margin-bottom:9px}.status-icons{display:flex;justify-content:flex-end;align-items:center;gap:6px;font-weight:650;font-size:12px}.status-icons svg{font-size:16px}.battery-outline{border:1.7px solid #dfeeff;border-radius:4px;height:12px;width:24px;padding:2px}.battery-outline:after{content:"";display:block;width:62%;height:100%;border-radius:1px;background:#f1d87b}
+.top-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:15px}.large-tile{height:75px;border-radius:25px;display:flex;align-items:center;gap:13px;padding:14px 16px;min-width:0;box-shadow:inset 0 1px 0 #ffffff13,0 3px 15px #08265612;transition:transform .21s var(--fast),background .18s ease}.large-tile:active{transform:scale(.96)}.large-tile.wifi{background:linear-gradient(140deg,#f2fdff,#c8f7ff);color:#1776c8}.large-tile.data{background:linear-gradient(130deg,#0752ac,#00367f);color:white}.large-tile svg{width:32px;height:32px;flex:none;stroke-width:2.6}.large-tile .card-label{font-size:16px;font-weight:560;line-height:1.18;white-space:nowrap}.large-tile .subtitle{font-size:12px;line-height:1.2;opacity:.7;font-weight:400;margin-top:5px}
+.control-grid{display:grid;grid-template-columns:1.9fr 0.95fr 0.95fr;gap:14px;height:171px;margin-bottom:15px}.media,.v-slider{border-radius:24px;background:linear-gradient(153deg,#084f9daa,#00376a91);overflow:hidden;position:relative;box-shadow:inset 0 1px 0 #ffffff0a}.media{display:flex;flex-direction:column;justify-content:space-between;padding:19px 16px 18px;min-width:0}.cast-icon{position:absolute;right:14px;top:12px;opacity:.75;font-size:24px}.media .notplaying{font-size:14px;font-weight:420;color:#aec7db;margin-top:43px;text-align:center}.transport{display:flex;align-items:center;justify-content:space-between;margin:0 5px}.transport button{font-size:25px;opacity:.83}.transport button.mainplay{font-size:32px;color:#fff;opacity:1}
+.v-slider{touch-action:none;cursor:ns-resize;background:linear-gradient(150deg,#06429bc4,#003a72aa)}.v-fill{position:absolute;left:0;right:0;bottom:0;height:38%;background:linear-gradient(180deg,#f9fbff,#d2f6ff);border-radius:0 0 24px 24px;transition:height .12s linear}.v-slider.dragging .v-fill{transition:none}.v-slider .v-icon{position:absolute;bottom:13px;left:0;width:100%;display:grid;place-items:center;color:#eda724;font-size:25px;pointer-events:none}.v-slider[data-kind=volume] .v-icon{color:#3080e5}.v-slider .knob-lip{position:absolute;left:15%;right:15%;top:9px;height:4px;border-radius:3px;background:#ffffff25;pointer-events:none}
+.home-card{width:100%;height:74px;display:flex;align-items:center;justify-content:center;gap:13px;border-radius:24px;margin-bottom:16px;background:linear-gradient(110deg,#233f82aa,#01694dbb);box-shadow:inset 0 1px 0 #ffffff13;color:#eefcff;font-size:18px;font-weight:480;transition:transform .16s,background .2s}.home-card:active{transform:scale(.98)}.house-icon{display:grid;place-items:center;background:white;color:#41a3c2;border-radius:9px;width:26px;height:26px;font-size:17px}
+.quick-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 11px;justify-items:center}.quick{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0}.bubble{height:min(16vw,72px);width:min(16vw,72px);min-width:55px;min-height:55px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#173a72bb,#143d61c4);color:#f8fdff;box-shadow:inset 0 1px 0 #ffffff0c,0 4px 16px #08234e0e;transition:background .22s ease,color .2s ease,transform .23s var(--fast),box-shadow .22s}.bubble svg{font-size:27px;stroke-width:2.6}.bubble .icon-emoji{font-size:26px}.quick[data-active=true] .bubble{background:linear-gradient(145deg,#f9fdff,#d4fcff);color:#2385cb;box-shadow:0 2px 15px #ddffff36}.quick:active .bubble{transform:scale(.89)}.quick .name{font-size:10px;text-align:center;line-height:1.15;color:#d7ebf4;opacity:0;max-width:78px;transition:opacity .2s}.quick-grid.show-labels .name{opacity:.86}
+.swipe-rail{display:block;margin:32px auto 0;width:90px;height:4px;border-radius:6px;background:#d5faff90;touch-action:none;padding:15px 0;background-clip:content-box;box-sizing:content-box}
+#details{position:absolute;inset:0;display:grid;place-items:center;z-index:10;pointer-events:none;opacity:0;transition:opacity .36s ease}#shade.detail #details{pointer-events:auto;opacity:1}
+#detail-card{position:relative;width:min(calc(100vw - 60px),415px);min-height:430px;max-height:76vh;overflow:hidden;border-radius:31px;background:linear-gradient(155deg,#07538bda,#09366cdd 58%,#075d63d7);box-shadow:0 28px 70px #0124514d,inset 0 1px 1px #ffffff20;transform:translateY(45px) scale(.65);transform-origin:65% 22%;transition:transform .49s var(--spring);-webkit-backdrop-filter:blur(28px);backdrop-filter:blur(28px)}#shade.detail #detail-card{transform:translateY(0) scale(1)}
+#detail-card:before{content:"";position:absolute;inset:-15%;background:radial-gradient(60% 60% at 100% 92%,#0bdfbd48,transparent 75%),radial-gradient(55% 55% at 8% 8%,#2d8efa45,transparent 75%);pointer-events:none}#detail-inner{position:relative;padding:40px 18px 22px;height:100%;display:flex;flex-direction:column;align-items:center;gap:0}
+.detail-slider{position:relative;overflow:hidden;height:min(24vh,235px);min-height:165px;width:110px;border-radius:27px;background:#0b347bb5;touch-action:none}.detail-slider .v-fill{height:43%;border-radius:0 0 27px 27px}.detail-slider .v-icon{bottom:17px;font-size:28px}.detail-slider .v-icon{position:absolute;bottom:18px;left:0;right:0;display:grid;place-items:center;font-size:28px;color:#e6a02a;pointer-events:none}.detail-slider[data-kind=volume] .v-icon{color:#2b77d5}.detail-dots{position:absolute;top:29px;right:21%;width:12px;height:12px;border-radius:50%;background:#b4d9f3ab}
+.detail-actions{display:flex;align-items:flex-start;justify-content:space-around;width:100%;margin-top:48px;gap:5px}.detail-action{display:flex;align-items:center;flex-direction:column;gap:13px;width:32%;font-size:11px;color:#d6e3ef;text-align:center;white-space:nowrap}.detail-action .circle{display:grid;place-items:center;width:68px;height:68px;background:#e5fcff;color:#158ccb;border-radius:50%;font-size:28px;box-shadow:0 4px 12px #06406f30}.detail-action[data-selected=true] .circle{background:#55c8fa;color:white}.detail-action span:last-child{line-height:1.3}
+.detail-close{position:absolute;top:8px;right:12px;font-size:25px;color:#c9efff88;padding:8px}.tap-catcher{position:absolute;inset:0;z-index:0}
+#toast{position:absolute;z-index:40;bottom:65px;left:50%;max-width:calc(100% - 32px);transform:translate(-50%,14px);opacity:0;pointer-events:none;background:#0a204ee9;color:white;border-radius:22px;padding:12px 17px;font-size:13px;text-align:center;box-shadow:0 10px 24px #00143e55;transition:opacity .18s,transform .2s}#toast.show{opacity:1;transform:translate(-50%,0)}
+#toggle-open{position:absolute;z-index:8;top:7px;right:8px;background:#042a77bc;color:white;border:1px solid #ffffff30;padding:10px 15px;border-radius:24px;display:none;font-size:12px;backdrop-filter:blur(10px)}
+#shade:not(.show) ~ #toggle-open{display:block}
+#launcher-actions{position:absolute;bottom:19px;z-index:20;left:50%;transform:translateX(-50%);display:flex;gap:10px;transition:opacity .2s}#launcher-actions button{background:#062855d4;border:1px solid #ffffff2b;border-radius:100px;padding:10px 15px;font-size:12px;white-space:nowrap}body[data-native=overlay],body[data-native=overlay] #app{background:transparent!important}body[data-native=overlay] #ambient,body[data-native=overlay] #home{display:none!important}body[data-native=overlay] #shade{background:linear-gradient(160deg,#376fa5c7 0%,#2987b1c8 36%,#0e6e91c9 70%,#04446bd6 100%)}body[data-native=overlay] #launcher-actions,body[data-native=overlay] #hint,body[data-native=overlay] #toggle-open{display:none!important}
+#shade.show #hint{opacity:0}#shade.show~#hint{opacity:0}
+.animate-in{animation:rise .6s var(--spring) both;animation-delay:calc(var(--i,0)*19ms)}@keyframes rise{from{transform:translateY(-24px) scale(.96);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+@media (max-width:380px){#content{padding-left:21px;padding-right:21px}.top-cards{gap:9px}.large-tile{padding:10px;gap:9px}.large-tile .card-label{font-size:14px}.control-grid{gap:9px}.quick-grid{gap:17px 8px}.media{padding:14px 12px}.user-name{font-size:12px}}
+@media (min-width:540px){#app{max-width:460px;margin:auto;box-shadow:0 0 0 100vmax #050d25}#content{padding-left:31px;padding-right:31px}}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+.animate-in {animation:none}
+/* V2: measured from the 8.9-second reference. Opening: blur 0.35-0.75s, settle ~0.85s.
+   Closing: reverse blur/fade, not a top-of-screen slide. Deliberately preserve V1 layout. */
+#home { transition:filter .46s cubic-bezier(.22,.74,.31,1),transform .58s cubic-bezier(.22,.85,.28,1); }
+#home.open {filter:blur(22px) saturate(1.26);transform:scale(1.028)}
+#shade {transform:scale(1.018);filter:blur(13px);opacity:0;transition:transform .54s cubic-bezier(.22,.85,.28,1),filter .52s cubic-bezier(.22,.85,.28,1),opacity .44s cubic-bezier(.22,.85,.28,1);}
+#shade.show {transform:scale(1);filter:blur(0);opacity:1;}
+#shade.closing {transform:scale(1.013);filter:blur(13px);opacity:0;}
+#shade.entering .animate-in {animation:controlReveal .52s cubic-bezier(.2,.75,.27,1) both;animation-delay:calc(90ms + var(--i,0) * 11ms);}
+@keyframes controlReveal {0%{transform:translateY(11px) scale(.982);filter:blur(7px);opacity:0}100%{transform:translateY(0) scale(1);filter:blur(0);opacity:1}}
+#detail-card {transform-origin:center center;transform:translate(var(--origin-x,0px),var(--origin-y,36px)) scale(var(--origin-sx,.48),var(--origin-sy,.46));transition:transform .48s cubic-bezier(.14,.84,.26,1),border-radius .35s ease,opacity .26s ease;opacity:.6;}
+#shade.detail #detail-card{transform:translate(0px,0px) scale(1);opacity:1;}
+#content {transition:filter .31s ease,transform .4s cubic-bezier(.17,.85,.25,1),opacity .28s ease}
+#shade.detail #content {filter:blur(19px);opacity:.32;transform:scale(.975)}
+.battery-outline::after {width:var(--level,0%)}
+.media .notplaying{background:transparent;color:#aec7db;font-size:14px;font-weight:420;margin-top:43px;text-align:center;line-height:1.4;max-height:50px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.quick[data-active=unknown] .bubble{background:linear-gradient(145deg,#143b76aa,#13446ca9);color:#f5fbff}
+body[data-native=overlay] #shade {background:linear-gradient(160deg,#3776a3b9 0%,#2f85b2b8 34%,#176b94bc 73%,#04436ab8 100%)}
+@media(prefers-reduced-motion:reduce){#shade,#home,#detail-card,.animate-in{animation:none!important;transition:none!important;filter:none!important}}
+
+/* V3: measured 30 FPS reference: frosted background appears first, then controls resolve.
+   A slight luminance veil protects icons during first frames, never moves page offscreen. */
+#shade::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:rgba(21,73,134,.08);opacity:0;transition:opacity .35s ease}
+#shade.entering::after{opacity:1}
+#shade.entering #content{animation:panelFocus .54s cubic-bezier(.24,.72,.28,1) both}
+@keyframes panelFocus{0%{filter:blur(12px);opacity:.55;transform:scale(1.014)}54%{filter:blur(3.5px);opacity:.92;transform:scale(1.002)}100%{filter:blur(0);opacity:1;transform:scale(1)}}
+#shade.entering .animate-in{animation:controlReveal .46s cubic-bezier(.22,.76,.27,1) both;animation-delay:calc(40ms + var(--i,0)*8ms)}
+#shade.closing #content{filter:blur(7px);opacity:.34;transform:scale(1.008)}
+#shade.closing{filter:blur(11px);opacity:0;transform:scale(1.011)}
+#shade{transition:transform .45s cubic-bezier(.25,.7,.3,1),filter .43s cubic-bezier(.25,.7,.3,1),opacity .4s ease}
+#shade:not(.show){pointer-events:none}
+/* V1 controls and geometry remain intact. Refine only expanded-card transition. */
+#details{transition:opacity .3s cubic-bezier(.24,.7,.27,1)}
+#detail-card{transition:transform .44s cubic-bezier(.2,.8,.24,1),opacity .32s ease,filter .42s ease;filter:blur(7px)}
+#shade.detail #detail-card{filter:blur(0)}
+#shade.detail #content{filter:blur(16px) brightness(.9);opacity:.42}
+.quick[data-active=unknown] .bubble{background:linear-gradient(145deg,#173a72bb,#143d61c4);color:#f8fdff}
+/* Shortcut tiles keep V1's exact appearance; labels explain their behavior. */
+.bubble{position:relative}
+#appinfo{position:absolute;left:12px;bottom:6px;right:12px;z-index:2;color:#d7eaffaa;text-align:center;font:11px Roboto,sans-serif;pointer-events:none}
+body[data-native=overlay] #appinfo{display:none}
+#shade.show ~ #launcher-actions{opacity:0;pointer-events:none}
+@media(prefers-reduced-motion:reduce){#shade.entering #content,#shade.entering .animate-in{animation:none!important}}
+
+/* Native app has a real setup surface; the fake launcher is browser-demo-only. */
+#native-setup{display:none}
+body[data-real-app=true] #home{display:none}
+body[data-real-app=true] #native-setup{display:flex;position:absolute;inset:0;z-index:0;align-items:center;justify-content:center;text-align:center;padding:34px;color:#f6fcff;flex-direction:column;gap:17px;background:radial-gradient(ellipse at 15% 30%,#3285c5 0%,transparent 56%),radial-gradient(ellipse at 95% 80%,#068e8e 0%,transparent 62%),linear-gradient(145deg,#092668,#084581 63%,#053d74)}
+#native-setup h1{margin:0;font-size:35px;font-weight:700;letter-spacing:-1.3px}
+#native-setup p{margin:0;max-width:30ch;font-size:16px;line-height:1.55;color:#d7eafc}
+#native-setup .setup-cta{display:inline-flex;align-items:center;justify-content:center;padding:14px 22px;border-radius:28px;background:#e1fbff;color:#07529b;font-size:15px;font-weight:650}
+#native-setup .setup-cta:active{transform:scale(.97)}
+#native-setup .footnote{font-size:12px;color:#dcecf5a1}
+body[data-real-app=true] #appinfo{display:none}
+body[data-real-app=true] #launcher-actions{display:none!important}
+#shade.show ~ #native-setup{pointer-events:none}
+</style></head><body data-native="preview">
+<!-- Inline SVGs are hand-authored and not a stock UI screenshot. -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><defs>
+<symbol id="wifi" viewBox="0 0 24 24"><path d="M2.5 8.6A15.8 15.8 0 0 1 21.5 8.6M5.7 12.2a11 11 0 0 1 12.6 0M9 15.8a5.9 5.9 0 0 1 6 0"/><path d="M12 20l.1-.1" stroke-width="3"/></symbol>
+<symbol id="data" viewBox="0 0 24 24"><path d="M5 3v17M2 15l3 4 3-4M19 21V4m-3 4 3-4 3 4"/></symbol>
+<symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9 7 7m10 10 2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></symbol>
+<symbol id="i-volume" viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9H3ZM16 9a5 5 0 0 1 0 6M19 6a9 9 0 0 1 0 12"/></symbol>
+<symbol id="bluetooth" viewBox="0 0 24 24"><path d="m7 6 10 12-5 4V2l5 4L7 18"/></symbol>
+<symbol id="plane" viewBox="0 0 24 24"><path d="M11.5 2 13 10l8 6v2l-8-3-.5 5-2.5 2-1-7-7 2v-2l7-5.2V2Z"/></symbol>
+<symbol id="mute" viewBox="0 0 24 24"><path d="M4 10v5h4l5 4V5l-5 5H4M18 9l4 6m0-6-4 6"/></symbol>
+<symbol id="flash" viewBox="0 0 24 24"><path d="M8 2h8l-1 6v2l2 2v10H7V12l2-2V8L8 2Z"/><path d="M9 7h6M9 14h6"/></symbol>
+<symbol id="battery" viewBox="0 0 24 24"><rect x="2" y="6" width="19" height="12" rx="3"/><path d="M22 10v4M12 8l-3 5h4l-2 4"/></symbol>
+<symbol id="rotate" viewBox="0 0 24 24"><path d="M4 8a9 9 0 0 1 16-2l2 1m0-5v5h-5M20 16a9 9 0 0 1-16 2l-2-1m0 5v-5h5"/></symbol>
+<symbol id="settings" viewBox="0 0 24 24"><path d="M12 2.5 15 4l2.7-.3 2.1 3.5-.9 2.5 1 2.3-1 2.5.9 2.5-2.1 3.5-2.7-.3-3 1.5-3-1.5-2.7.3-2.1-3.5.9-2.5-1-2.5 1-2.3-.9-2.5 2.1-3.5L9 4Z"/><circle cx="12" cy="12" r="3.3"/></symbol>
+<symbol id="sync" viewBox="0 0 24 24"><path d="M20 10A8 8 0 0 0 6 5L3 8m0-5v5h5M4 14a8 8 0 0 0 14 5l3-3m0 5v-5h-5"/></symbol>
+<symbol id="wallet" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18m-4 5h2"/></symbol>
+<symbol id="pin" viewBox="0 0 24 24"><path d="M12 21S5 14.5 5 9a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2"/></symbol>
+<symbol id="auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4m-11.4 11.4-1.4 1.4"/><path d="m10 14 2-5 2 5m-3.3-.8h2.6" stroke-width="1.2"/></symbol>
+<symbol id="video" viewBox="0 0 24 24"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="m17 9 5-3v12l-5-3"/></symbol>
+<symbol id="link" viewBox="0 0 24 24"><path d="M8 8h-2a5 5 0 0 0 0 10h4m4-12h4a5 5 0 0 1 0 10h-2M9 12h6"/></symbol>
+<symbol id="cast" viewBox="0 0 24 24"><path d="M2 6h19v12H15M2 14a8 8 0 0 1 8 8M2 18a4 4 0 0 1 4 4M2 22h.01"/></symbol>
+<symbol id="moon" viewBox="0 0 24 24"><path d="M20 15A8.5 8.5 0 0 1 9 4a8.5 8.5 0 1 0 11 11Z"/></symbol>
+<symbol id="hotspot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.4"/><path d="M6.5 6.5a8 8 0 0 0 0 11m11-11a8 8 0 0 1 0 11M3 3a13 13 0 0 0 0 18m18-18a13 13 0 0 1 0 18"/></symbol>
+<symbol id="vibrate" viewBox="0 0 24 24"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 8v8M20 8v8M2 10v4m20-4v4"/></symbol>
+<symbol id="nearby" viewBox="0 0 24 24"><path d="m8 4 10 8-10 8M5 8l8 4-8 4"/></symbol>
+<symbol id="nfc" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M7 18V6l10 12V6"/></symbol>
+<symbol id="music" viewBox="0 0 24 24"><path d="M10 18V4l10-2v14M10 18a4 2.5 0 1 1-4-2.5 5 5 0 0 1 4 2.5m10-2a4 2.5 0 1 1-4-2.5 5 5 0 0 1 4 2.5"/></symbol>
+<symbol id="chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="eye" viewBox="0 0 24 24"><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18Z"/></symbol>
+<symbol id="homeicon" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v10H3Z"/><path d="M9 21v-8h6v8"/></symbol>
+<symbol id="play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8V4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="pause" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="prev" viewBox="0 0 24 24"><path d="M5 4v16m14-16L7 12l12 8V4Z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="next" viewBox="0 0 24 24"><path d="M19 4v16M5 4l12 8-12 8V4Z" fill="currentColor" stroke="none"/></symbol>
+</defs></svg>
+<div id="app"><div id="ambient"></div>
+<div id="home"><div class="home-header"><span>5:57 ◈</span><span>▴ ▰ ▰</span></div><div class="home-clock">5:57</div><div class="home-date">Friday · March 13</div><div class="home-search">G <span>⌕ &nbsp; 🎙</span></div><div class="app-icons"><div class="app-symbol">✿</div><div class="app-symbol">▶</div><div class="app-symbol">▦</div><div class="app-symbol">✧</div><div class="app-symbol">◎</div><div class="app-symbol">◉</div><div class="app-symbol">♫</div><div class="app-symbol">☰</div><div class="app-symbol">✉</div><div class="app-symbol">☷</div><div class="app-symbol">◍</div><div class="app-symbol">☼</div></div><div class="home-dock"><span>☎️</span><span>✉️</span><span>💬</span><span>📷</span></div><span class="home-pill"></span></div>
+<div id="shade"><div id="scroll"><div id="content">
+<div class="brandline"><div class="small-date" id="date">Fri, Mar 13</div><div class="status-side"><div class="user-name" id="user-name">My phone</div><div class="status-icons"><span id="net-type">Network</span><svg><use href="#wifi"/></svg><span id="battery-value">--%</span><div class="battery-outline" id="battery-outline"></div></div></div></div>
+<div class="top-cards"><button class="large-tile wifi animate-in" style="--i:0" data-action="wifi"><svg><use href="#wifi"/></svg><div><div class="card-label">WIFI</div><div class="subtitle" id="wifi-state">Preview</div></div></button><button class="large-tile data animate-in" style="--i:1" data-action="mobile"><svg><use href="#data"/></svg><div><div class="card-label">Mobile data</div><div class="subtitle" id="mobile-state">Tap to manage</div></div></button></div>
+<div class="control-grid"><div class="media animate-in" style="--i:2"><span class="cast-icon"><svg><use href="#cast"/></svg></span><button class="notplaying" id="media-label" data-action="mediaAccess" aria-label="Media status and access">Media info</button><div class="transport"><button data-media="previous" aria-label="Previous"><svg><use href="#prev"/></svg></button><button class="mainplay" data-media="play" aria-label="Play"><svg id="play-icon"><use href="#play"/></svg></button><button data-media="next" aria-label="Next"><svg><use href="#next"/></svg></button></div></div>
+<button class="v-slider animate-in" style="--i:3" id="brightness" data-kind="brightness" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="43" aria-label="Brightness — tap to expand or drag to adjust"><span class="v-fill" style="height:43%"></span><span class="knob-lip"></span><span class="v-icon"><svg><use href="#sun"/></svg></span></button>
+<button class="v-slider animate-in" style="--i:4" id="volume" data-kind="volume" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20" aria-label="Volume — tap to expand or drag to adjust"><span class="v-fill" style="height:20%"></span><span class="knob-lip"></span><span class="v-icon"><svg><use href="#i-volume"/></svg></span></button></div>
+<button class="home-card animate-in" style="--i:5" data-action="home"><span class="house-icon">⌂</span><span>Home</span></button>
+<div class="quick-grid" id="quicks"></div><div class="swipe-rail" id="dismiss-rail" title="Swipe up to close"></div>
+</div></div><div id="details"><div class="tap-catcher" id="dismiss-detail"></div><div id="detail-card"><div id="detail-inner"><button class="detail-close" id="detail-close" aria-label="Close"><svg><use href="#close"/></svg></button><div class="detail-slider" id="detail-slider" data-kind="brightness"><span class="v-fill" style="height:43%"></span><span class="detail-dots"></span><span class="v-icon"><svg id="detail-icon"><use href="#sun"/></svg></span></div><div class="detail-actions" id="detail-actions"></div></div></div></div></div>
+<div id="native-setup" aria-label="Petal Control setup"><h1>Petal Control</h1><p>Open the Control Center over your real home screen and other apps using the floating handle.</p><button class="setup-cta" id="setup-enable" type="button">Enable floating handle</button><button class="setup-cta" id="setup-preview" type="button">Preview Control Center</button><p class="footnote">No root needed. Samsung's original notification shade remains unchanged.</p></div><div id="hint"><span>Swipe down to open the interactive preview</span></div><button id="toggle-open">Open Control Center ↓</button><div id="toast"></div>
+<div id="launcher-actions"><button id="trigger-overlay">Enable floating handle</button><button id="close-shade">Close ↑</button></div><div id="appinfo">Petal Control · demo home screen · Android state is read live</div>
+</div>
+<script>
+'use strict';
+const body=document.body,shade=document.querySelector('#shade'),home=document.querySelector('#home'),scroll=document.querySelector('#scroll'),quicks=document.querySelector('#quicks'),toastNode=document.querySelector('#toast');
+const qs=[['bluetooth','Bluetooth',null],['plane','Airplane mode',null],['mute','Silent',null],['flash','Flashlight',null],['battery','Battery saver',null],['rotate','Auto rotate',null],['settings','Settings',null],['sync','Sync',null],['wallet','Wallet',null],['pin','Location',null],['auto','Auto brightness',null],['video','Screen recorder',null],['link','Share',null],['cast','Cast',null],['moon','Do not disturb',null],['hotspot','Hotspot',null],['vibrate','Vibrate',null],['nearby','Nearby share',null],['nfc','NFC',null],['music','Music',null]];
+const prefs={brightness:43,volume:20,autoBrightness:false,darkMode:false,readingMode:false};
+let open=false,detailName=null,dragging=false,scrolly=0,toastTimer=0;
+function svg(n){return `<svg aria-hidden="true"><use href="#${n}"></use></svg>`}
+quicks.innerHTML=qs.map(([key,label,active],i)=>`<button class="quick animate-in" style="--i:${6+i}" data-quick="${key}" data-active="unknown" data-capability="shortcut" aria-label="${label}"><span class="bubble">${svg(key)}</span><span class="name">${label}</span></button>`).join('');
+const native=()=>!!window.Android;
+function call(method,...args){try{if(window.Android&&typeof window.Android[method]==='function')return window.Android[method](...args)}catch(e){console.warn(method,e)}return null}
+function toast(text){toastNode.textContent=text;toastNode.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastNode.classList.remove('show'),2300)}
+function date(){const d=new Date();document.getElementById('date').textContent=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});if(!native())document.getElementById('user-name').textContent='Preview' ;let hh=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:false});document.querySelector('.home-clock').textContent=hh}
+date();setInterval(date,30000);
+let closeTimeout=0, entranceTimeout=0;
+function setOpen(v){
+  const wasOpen=open; open=!!v;
+  clearTimeout(closeTimeout);clearTimeout(entranceTimeout);
+  if(open){
+    closeDetail();shade.classList.remove('closing','entering','show');
+    // Restart stagger only on a real opening (never on data polls).
+    if(!wasOpen){void shade.offsetHeight;shade.classList.add('entering');}
+    shade.classList.add('show');home.classList.add('open');
+    if(!wasOpen)entranceTimeout=setTimeout(()=>shade.classList.remove('entering'),690);
+    scroll.scrollTo({top:0,behavior:'instant'});
+    if(native())refreshNativeState();
+  } else {
+    closeDetail();shade.classList.remove('entering','show');shade.classList.add('closing');home.classList.remove('open');
+    // Wait for native background blur and card fade to complete before dismissing the overlay.
+    if(body.dataset.native==='overlay'){call('onPanelClosed');closeTimeout=setTimeout(()=>call('closeOverlay'),485);}
+  }
+  document.querySelector('#hint').style.opacity=open?'0':'1';
+}
+function setDetail(kind){
+ detailName=kind;
+ const source=document.getElementById(kind).getBoundingClientRect();
+ const card=document.querySelector('#detail-card');
+ const destWidth=Math.min(innerWidth-60,415), destHeight=Math.max(430,Math.min(innerHeight*.76,470));
+ const centerX=innerWidth/2, centerY=innerHeight/2;
+ card.style.setProperty('--origin-x',((source.left+source.width/2)-centerX)+'px');
+ card.style.setProperty('--origin-y',((source.top+source.height/2)-centerY)+'px');
+ card.style.setProperty('--origin-sx',Math.max(.16,source.width/destWidth));
+ card.style.setProperty('--origin-sy',Math.max(.2,source.height/destHeight));
+ shade.classList.add('detail');
+ const detailSlider=document.querySelector('#detail-slider');
+ detailSlider.dataset.kind=kind;document.querySelector('#detail-icon use').setAttribute('href',kind==='volume'?'#i-volume':'#sun');detailSlider.querySelector('.v-fill').style.height=prefs[kind]+'%';let items=kind==='volume'?[['mute','Silent','silent'],['vibrate','Vibrate','vibrate'],['settings','Sound settings','sound']]:[['auto','Auto brightness','autoBrightness'],['theme','Dark mode','darkMode'],['eye','Reading mode','readingMode']];document.querySelector('#detail-actions').innerHTML=items.map(([icon,name,flag])=>`<button class="detail-action" data-detail-action="${flag}" data-selected="${!!prefs[flag]}"><span class="circle">${svg(icon)}</span><span>${name}</span></button>`).join('')}
+function closeDetail(){shade.classList.remove('detail');detailName=null}
+function updateSlider(kind,v,send){v=Math.round(Math.max(0,Math.min(100,v)));prefs[kind]=v;document.querySelector(`#${kind} .v-fill`).style.height=v+'%'; document.getElementById(kind).setAttribute('aria-valuenow',String(v));const det=document.querySelector('#detail-slider');if(det.dataset.kind===kind)det.querySelector('.v-fill').style.height=v+'%';if(send){if(kind==='brightness')call('setBrightness',v);else call('setVolume',v)}}
+function attachSlider(el,kind,expand){let sy=0,wasDragged=false,startV=0;el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();sy=e.clientY;startV=prefs[kind];wasDragged=false;el.classList.add('dragging');dragging=true;try{el.setPointerCapture(e.pointerId)}catch{} });el.addEventListener('pointermove',e=>{if(!el.hasPointerCapture?.(e.pointerId))return;let dy=sy-e.clientY;if(Math.abs(dy)>6)wasDragged=true;if(wasDragged){const change=dy/el.getBoundingClientRect().height*100;updateSlider(kind,startV+change,false)}});el.addEventListener('pointerup',e=>{e.preventDefault();e.stopPropagation();const captured=el.hasPointerCapture?.(e.pointerId);if(captured){el.releasePointerCapture(e.pointerId)}el.classList.remove('dragging');dragging=false;if(wasDragged){updateSlider(kind,prefs[kind],true)}else if(expand){setDetail(kind)}});el.addEventListener('pointercancel',()=>{el.classList.remove('dragging');dragging=false})}
+for(const kind of ['brightness','volume']){
+ const element=document.getElementById(kind);
+ element.addEventListener('keydown',e=>{
+   const n=e.key==='ArrowUp'||e.key==='ArrowRight'?5:e.key==='ArrowDown'||e.key==='ArrowLeft'?-5:0;
+   if(n){e.preventDefault();updateSlider(kind,prefs[kind]+n,true)}
+   if(e.key==='Enter')setDetail(kind);
+ });
+}
+attachSlider(document.querySelector('#brightness'),'brightness',true);attachSlider(document.querySelector('#volume'),'volume',true);attachSlider(document.querySelector('#detail-slider'),'brightness',false);
+// Detail slider must switch between brightness and volume when panel expands.
+let detailStart=0;
+const detailSlider=document.querySelector('#detail-slider');detailSlider.replaceWith(detailSlider.cloneNode(true)); // remove fixed brightness pointer handlers
+const activeDetailSlider=document.querySelector('#detail-slider');let py=0,pval=0,move=false;
+activeDetailSlider.addEventListener('pointerdown',e=>{e.preventDefault();dragging=true;py=e.clientY;pval=prefs[detailName||'brightness'];move=false;activeDetailSlider.setPointerCapture(e.pointerId)});
+activeDetailSlider.addEventListener('pointermove',e=>{if(!activeDetailSlider.hasPointerCapture(e.pointerId))return;const dy=py-e.clientY;if(Math.abs(dy)>3)move=true;updateSlider(detailName||'brightness',pval+dy/activeDetailSlider.getBoundingClientRect().height*100,false)});
+activeDetailSlider.addEventListener('pointerup',e=>{e.preventDefault();dragging=false;if(activeDetailSlider.hasPointerCapture(e.pointerId))activeDetailSlider.releasePointerCapture(e.pointerId);updateSlider(detailName||'brightness',prefs[detailName||'brightness'],true)});
+activeDetailSlider.addEventListener('pointercancel',()=>dragging=false);
+const detailActions=document.querySelector('#detail-actions');detailActions.addEventListener('click',e=>{
+  const b=e.target.closest('[data-detail-action]');if(!b)return;
+  const key=b.dataset.detailAction;
+  if(!native()) {prefs[key]=!prefs[key];b.dataset.selected=String(prefs[key]);toast('Browser demo only');return;}
+  if(key==='autoBrightness')call('setAutoBrightness',!lastNativeState.autoBrightness);
+  else if(key==='silent'||key==='vibrate')call('setSoundMode',lastNativeState.ringer===key?'normal':key);
+  else {call('openSettings',key==='sound'?'sound':'display');toast('Opens Android settings');}
+  setTimeout(refreshNativeState,420);
+});
+document.querySelector('#detail-close').addEventListener('click',closeDetail);document.querySelector('#dismiss-detail').addEventListener('click',closeDetail);
+function act(key){
+ const text={wifi:'Wi-Fi',mobile:'Mobile data',home:'Home controls',mediaAccess:'Media session access'}[key]||key;
+ if(!native()){toast(`${text}: browser preview only`);return;}
+ if(key==='wifi'||key==='mobile')toast('Android controls network switching');
+ call('openSettings',key);
+}
+document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>act(b.dataset.action)));
+let lastNativeState={};
+quicks.addEventListener('click',e=>{
+ const b=e.target.closest('[data-quick]');if(!b)return;
+ const key=b.dataset.quick;
+ if(!native()){toast(`${b.querySelector('.name').textContent} · preview; system controls require the Android app`);return;}
+ if(key==='flash')call('toggleTorch');
+ else if(key==='rotate')call('toggleRotation');
+ else if(key==='moon')call('toggleDnd');
+ else if(key==='auto')call('setAutoBrightness',!lastNativeState.autoBrightness);
+ else if(key==='mute'||key==='vibrate')call('setSoundMode',lastNativeState.ringer===key?'normal':key);
+ else {call('openSettings',key);toast('This control opens Android settings');}
+ // Never fake the resulting toggle state; read it back after the OS completes the action.
+ setTimeout(refreshNativeState,380);
+});
+let playing=false;
+document.querySelectorAll('[data-media]').forEach(b=>b.addEventListener('click',()=>{
+ const m=b.dataset.media;
+ call('media',m);
+ if(!native() && m==='play'){
+    playing=!playing;
+    document.querySelector('#play-icon use').setAttribute('href',playing?'#pause':'#play');
+    document.querySelector('#media-label').textContent=playing?'Playing (demo)':'Not playing (demo)';
+ }
+ setTimeout(refreshNativeState,380);
+}));
+// Pull down to open and swipe up to close, in addition to buttons.
+let gestureStart=null;document.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;const t=e.touches[0];if(!open&&t.clientY<155)gestureStart={y:t.clientY,x:t.clientX};else if(open&&!detailName&&(t.clientY<85||t.clientY>innerHeight-75)&&scroll.scrollTop===0)gestureStart={y:t.clientY,x:t.clientX};else gestureStart=null},{passive:true});document.addEventListener('touchend',e=>{if(!gestureStart||e.changedTouches.length!==1)return;const t=e.changedTouches[0],dy=t.clientY-gestureStart.y,dx=t.clientX-gestureStart.x;if(Math.abs(dx)<80&&Math.abs(dy)>75){if(!open&&dy>0)setOpen(true);else if(open&&dy<0){setOpen(false);/* native overlay dismisses after close animation */}}gestureStart=null},{passive:true});
+document.querySelector('#toggle-open').addEventListener('click',()=>setOpen(true));document.querySelector('#close-shade').addEventListener('click',()=>setOpen(false));document.querySelector('#trigger-overlay').addEventListener('click',()=>{if(!native())toast('Install the Android app to enable a floating handle');else call('requestFloatingControl')});
+document.querySelector('#setup-enable').addEventListener('click',()=>call('requestFloatingControl'));
+document.querySelector('#setup-preview').addEventListener('click',()=>setOpen(true));document.querySelector('#dismiss-rail').addEventListener('click',()=>setOpen(false));
+// Native code calls this to configure overlay or full-screen preview.
+window.configureApp=(mode)=>{body.dataset.native=mode==='overlay'?'overlay':'preview';body.dataset.realApp=native()?'true':'false';document.getElementById('appinfo').textContent=mode==='overlay'?'':'Petal Control · browser demo';setOpen(true)};
+// Live device state. If Android denies a value, leave it unknown; never fake an on/off indicator.
+const realStateKeys={flash:'torch',rotate:'rotation',auto:'autoBrightness',pin:'location',bluetooth:'bluetoothEnabled',plane:'planeMode',battery:'batterySaver',moon:'dnd'};
+const actualState = {brightness:null,volume:null};
+window.applyNativeState=(state)=>{
+ if(!state||typeof state!=='object')return;
+ lastNativeState=state;
+ if(typeof state.device==='string')document.getElementById('user-name').textContent=state.device;
+ if(typeof state.battery==='number'){
+  document.getElementById('battery-value').textContent=state.battery+'%';
+  document.getElementById('battery-outline').style.setProperty('--level',Math.max(0,Math.min(100,state.battery))+'%');
+ }
+ if(typeof state.wifiEnabled==='boolean')document.getElementById('wifi-state').textContent=state.wifiConnected?'Connected':(state.wifiEnabled?'Not connected':'Off');
+ else document.getElementById('wifi-state').textContent='Unknown';
+ document.getElementById('mobile-state').textContent=state.cellConnected?'Connected':'Tap to manage';
+ document.getElementById('net-type').textContent=state.wifiConnected?'Wi-Fi':(state.cellConnected?'Mobile':'Network');
+ if(!dragging){
+  for(const k of ['brightness','volume'])if(typeof state[k]==='number')updateSlider(k,state[k],false);
+ }
+ if(typeof state.autoBrightness==='boolean')prefs.autoBrightness=state.autoBrightness;
+ const med=document.getElementById('media-label');
+ if(state.mediaAccess===false){med.textContent='Tap for media access';med.title='Optional: enable notification access to display current song';}
+ else if(state.mediaAccess===true){
+  med.textContent=state.mediaTitle||'No active media';
+  med.title=state.mediaArtist||'';
+  const playing=state.mediaPlaying===true;
+  document.querySelector('#play-icon use').setAttribute('href',playing?'#pause':'#play');
+ }
+ document.querySelectorAll('.quick[data-quick]').forEach(b=>{
+  const k=b.dataset.quick;
+  let val=null;
+  if(k==='bluetooth'&&typeof state.bluetoothEnabled==='boolean')val=state.bluetoothEnabled;
+  if(k==='pin'&&typeof state.location==='boolean')val=state.location;
+  if(k==='mute'&&state.ringer)val=state.ringer==='silent';
+  else if(k==='vibrate'&&state.ringer)val=state.ringer==='vibrate';
+  else if(k==='auto'&&typeof state.autoBrightness==='boolean')val=state.autoBrightness;
+  else if(k==='rotate'&&typeof state.rotation==='boolean')val=state.rotation;
+  else if(k==='flash'&&typeof state.torch==='boolean')val=state.torch;
+  else if(k==='moon'&&typeof state.dnd==='boolean')val=state.dnd;
+  else if(k==='battery'&&typeof state.batterySaver==='boolean')val=state.batterySaver;
+  else if(k==='plane'&&typeof state.planeMode==='boolean')val=state.planeMode;
+  else if(k==='nfc'&&typeof state.nfc==='boolean')val=state.nfc;
+  b.dataset.active=val===null?'unknown':String(val);
+  b.dataset.capability=['flash','rotate','moon','auto','mute','vibrate'].includes(k)?'toggle':'shortcut';
+  b.setAttribute('aria-label',b.querySelector('.name').textContent+(b.dataset.capability==='shortcut'?' (opens Android settings)':''));
+ });
+ document.querySelectorAll('[data-detail-action]').forEach(b=>{
+   const k=b.dataset.detailAction;
+   const value=k==='autoBrightness'?state.autoBrightness:(k==='silent'?state.ringer==='silent':k==='vibrate'?state.ringer==='vibrate':null);
+   b.dataset.selected=(typeof value==='boolean')?String(value):'unknown';
+ });
+};
+window.setNativeLevels=(brightness,volume)=>window.applyNativeState({brightness,volume});
+window.setWifiStatus=(connected,name)=>{document.querySelector('#wifi-state').textContent=name||(connected?'Connected':'Off')};
+function refreshNativeState(){if(!native()||typeof window.Android.getState!=='function')return;try{const text=window.Android.getState();if(text)window.applyNativeState(JSON.parse(text));}catch(e){console.warn('Status refresh',e)}}
+setInterval(()=>{if(native()&&open&&body.dataset.native!=='overlay')refreshNativeState()},1600);
+window.addEventListener('focus',refreshNativeState);
+if(location.search.includes('overlay=1'))setTimeout(()=>configureApp('overlay'),80);
+else if(!native())setTimeout(()=>configureApp('preview'),130);
+// Real native Activity calls configureApp from onPageFinished.
+
+</script></body></html>
